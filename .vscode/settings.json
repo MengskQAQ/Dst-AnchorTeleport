@@ -1,0 +1,10 @@
+{
+    "Lua.diagnostics.globals": [
+        "TheSim",
+        "net_bool",
+        "net_string",
+        "json",
+        "locale",
+        "AT_GetTableString"
+    ]
+}
