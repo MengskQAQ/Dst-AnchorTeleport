@@ -210,37 +210,3 @@ AddPlayerPostInit(function(inst)
 		return inst
 	end
 end)
-
-local function AT_GetTableString(table , level, key)	-- 传参时请勿输入key值, key值用于函数自身调用
-	local str = ""
-	key = key or ""
-	level = level or 1
-	local indent = ""
-
-	for i = 1, level do
-		indent = indent .."  "
-	end
-
-	if key ~= "" then
-		str = str .. string.format("%s%s = { \n",indent, key)
-	else
-		str = str .. string.format("%s{ \n",indent)
-	end
-
-	key = ""
-	for k,v in pairs(table) do
-		if type(v) == "table" then
-			key = k
-			local text = AT_GetTableString(v, level + 1, key)
-			str = str .. string.format("%s \n",text)
-        elseif v.IsVector3 then
-            str = str .. string.format("%d, %d, %d \n", v:Get())
-		else
-			str = str .. string.format("%s%s = %s \n", indent .. "  ",tostring(k), tostring(v))
-		end
-	end
-	str = str .. string.format("%s} ",indent)
-	return str
-end
-
-GLOBAL.AT_GetTableString = AT_GetTableString
