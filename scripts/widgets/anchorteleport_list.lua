@@ -2,11 +2,15 @@ local ImageButton = require "widgets/imagebutton"
 local Widget = require "widgets/widget"
 local Text = require "widgets/text"
 
-local AT_List = Class(Widget, function(self)
+local AT_List = Class(Widget, function(self, mapwidget, atlas, tex)
     Widget._ctor(self, "anchorteleport_list")
 
     self.owner = ThePlayer
     -- self.root = self:AddChild(Widget("ROOT"))
+    self.mapwidget = mapwidget
+
+    self.card_atlas = atlas
+    self.card_tex = tex
 
     self.maxnumshow = TUNING.ANCHORTELEPORT.MAXNUMSHOW or 5
 	self.currentnum = 0
@@ -21,12 +25,11 @@ local AT_List = Class(Widget, function(self)
     -- self:SetScale(0.8)
 
 	self:InitAnchorLoot()
-
 end)
 
 --构造单个锚点卡
 function AT_List:AnchorCard()
-	local imagebutton = ImageButton("images/global.xml", "square.tex", nil, nil, nil, nil, {1,1}, {0,0}) --生成选项卡，编号不同
+	local imagebutton = ImageButton(self.card_atlas, self.card_tex, nil, nil, nil, nil, {1,1}, {0,0}) --生成选项卡，编号不同
 
     imagebutton.serial = nil
     imagebutton.iconworldpos = nil

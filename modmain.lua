@@ -14,6 +14,19 @@ AddReplicableComponent("anchorteleport")
 
 if not ENABLE then return end
 
+local icon_xml = "images/anchorteleport_icon.xml"
+local icon_tex = "images/anchorteleport_icon.tex"
+local list_xml = "images/anchorteleport_list.xml"
+local list_tex = "images/anchorteleport_list.tex"
+
+Assets = {
+    Asset("ATLAS", icon_xml),
+	Asset("IMAGE", icon_tex),
+
+    Asset("ATLAS", list_xml),
+	Asset("IMAGE", list_tex)
+}
+
 -------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------ TUNING -----------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------
@@ -44,25 +57,44 @@ end)
 -------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------- MpaScreen ---------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------
+local DOUBLECLICK_PERIOD = 0.3
+local DOUBLECLICK_DIST = 25
 
 AddSimPostInit(function()
 	AddClassPostConstruct("screens/mapscreen", function(self)
 
+        self.at_lasttime = 0
+        self.at_lastpos = Vector3(0,0,0)
+
 		local old_OnMouseButton = self.OnMouseButton
 		function self:OnMouseButton(button, down, ...)
 			if ThePlayer and ThePlayer:HasTag("AnchorTeleport") and not ThePlayer:HasTag("playerghost")
-             and ThePlayer.replica.anchorteleport
-			 and down and button == GLOBAL.MOUSEBUTTON_RIGHT then
-                ThePlayer.replica.anchorteleport:SetAnchorInfo("")
-				if ThePlayer.replica.anchorteleport:IsReady() then
-					local mousemappos = self:WidgetPosToMapPos(self:ScreenPosToWidgetPos(GLOBAL.TheInput:GetScreenPosition()))
-					local x, z, _ = self.minimap:MapPosToWorldPos(mousemappos:Get())   
-                    ThePlayer.replica.anchorteleport:SetIconWorldPos(Vector3(x, 0, z))
-					SendModRPCToServer(MOD_RPC["AnchorTeleport"]["CHECKPOINT"], x, z)
-				else
-					ThePlayer.replica.anchorteleport:SetIconWorldPos()
-				end
-			end
+             and ThePlayer.replica.anchorteleport and down then
+
+                local pos = GLOBAL.TheInput:GetScreenPosition()
+
+                -- 右键地图
+                if button == GLOBAL.MOUSEBUTTON_RIGHT then
+                    ThePlayer.replica.anchorteleport:SetAnchorInfo("")
+                    if ThePlayer.replica.anchorteleport:IsReady() then
+                        local mousemappos = self:WidgetPosToMapPos(self:ScreenPosToWidgetPos(pos))
+                        local x, z, _ = self.minimap:MapPosToWorldPos(mousemappos:Get()) 
+                        ThePlayer.replica.anchorteleport:SetIconWorldPos(Vector3(x, 0, z))
+                        SendModRPCToServer(MOD_RPC["AnchorTeleport"]["CHECKPOINT"], x, z)
+                    end
+                end
+
+                -- 双击地图
+                local time = GetStaticTime()
+                if (button ~= GLOBAL.MOUSEBUTTON_RIGHT)
+                 and (time - self.at_lasttime) < DOUBLECLICK_PERIOD
+                 and pos:Dist(self.at_lastpos) < DOUBLECLICK_DIST then
+                    ThePlayer.replica.anchorteleport:SetAnchorInfo("")
+                end
+
+                self.at_lasttime = time
+                self.at_lastpos = pos
+            end
 			if old_OnMouseButton then
 				old_OnMouseButton(self, button, down, ...)
 			end
@@ -112,8 +144,8 @@ AddClassPostConstruct("widgets/mapwidget", function(self)
 
 	self.anchorteleport = self:AddChild(Widget("AnchorTeleport"))
 
-    self.anchorteleport_icon = self.anchorteleport:AddChild(AT_Icon(self, "images/hud2.xml", "yotb_sewing_slot.tex"))
-    self.anchorteleport_list = self.anchorteleport:AddChild(AT_List())
+    self.anchorteleport_icon = self.anchorteleport:AddChild(AT_Icon(self, icon_xml, icon_tex))
+    self.anchorteleport_list = self.anchorteleport:AddChild(AT_List(self, list_xml, list_tex))
 end)
 
 -------------------------------------------------------------------------------------------------------------------
@@ -122,8 +154,8 @@ end)
 local FRAMES = GLOBAL.FRAMES
 local TimeEvent = GLOBAL.TimeEvent
 
-local function SGFn()
-	local state = GLOBAL.State
+AddStategraphState("wilson", function()
+	return GLOBAL.State
     {
         name = "anchorteleport_tp",
         tags = { "doing", "busy", "nopredict", "nomorph", "nodangle" },
@@ -197,10 +229,11 @@ local function SGFn()
             end
         end,
     }
-	return state
-end
+end)
 
-AddStategraphState("wilson", SGFn())
+-------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------- Player -------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
 
 AddPlayerPostInit(function(inst)
 	if GLOBAL.TheWorld.ismastersim then

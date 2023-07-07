@@ -24,19 +24,6 @@ local AT_Icon = Class(Image, function(self, mapwidget, atlas, tex)
 	self:StartUpdating()
 end)
 
-function AT_Icon:GetDebugString()
-	local str = string.format("IsShowing:%s", self:IsVisible())
-	local pos = ThePlayer and ThePlayer.replica.anchorteleport and ThePlayer.replica.anchorteleport:GetIconWorldPos()
-	if pos then
-		str = str .. string.format("worldpos: (%d, %d, %d)", pos.x, pos.y, pos.z)
-	else
-		str = str .. string.format("worldpos: nil")
-	end
-	local cpos = self:GetPosition()
-	str = str .. string.format("screenpos: (%d, %d, %d)", cpos.x, cpos.y, cpos.z)
-	return str
-end
-
 function AT_Icon:OnUpdate(dt)
 	local pos = ThePlayer and ThePlayer.replica.anchorteleport and ThePlayer.replica.anchorteleport:GetIconWorldPos()
 
@@ -51,6 +38,20 @@ function AT_Icon:OnUpdate(dt)
 		self:Show()
 	end
 	self:UpdateIconPosition(pos)
+end
+
+function AT_Icon:GetDebugString()
+	local str = string.format("[AnchorTeleport] ICON \n")
+	str = str .. string.format("IsShowing:%s \n", self:IsVisible())
+	local pos = ThePlayer and ThePlayer.replica.anchorteleport and ThePlayer.replica.anchorteleport:GetIconWorldPos()
+	if pos then
+		str = str .. string.format("worldpos: (%d, %d, %d) \n", pos.x, pos.y, pos.z)
+	else
+		str = str .. string.format("worldpos: nil \n")
+	end
+	local cpos = self:GetPosition()
+	str = str .. string.format("screenpos: (%d, %d, %d) \n", cpos.x, cpos.y, cpos.z)
+	return str
 end
 
 return AT_Icon
